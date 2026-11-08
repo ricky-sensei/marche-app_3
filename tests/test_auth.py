@@ -74,6 +74,38 @@ def test_ログイン後のnextに外部URLは使えない(client, customer):
     assert response.headers["Location"] == "/"
 
 
+def test_生産者として登録すると出品管理に移る(client):
+    response = register(client, "producer")
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/producer/products"
+
+
+def test_購入者として登録するとトップに移る(client):
+    response = register(client, "customer")
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/"
+
+
+def test_購入者は出品管理を開けない(client, customer, login):
+    login(customer)
+    response = client.get("/producer/products")
+    assert response.status_code == 403
+
+
+def test_未ログインで出品管理を開くとログイン画面へ(client):
+    response = client.get("/producer/products")
+    assert response.status_code == 302
+    assert "/login" in response.headers["Location"]
+
+
+def test_nextつきでログインすると元のページへ戻る(client, producer):
+    response = client.post(
+        "/login?next=/producer/products",
+        data={"email": producer.email, "password": "password"},
+    )
+    assert response.headers["Location"] == "/producer/products"
+
+
 def test_create_adminで管理者を作れる(app):
     result = app.test_cli_runner().invoke(
         args=[
