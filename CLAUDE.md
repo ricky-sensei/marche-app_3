@@ -49,7 +49,26 @@
 
 ## 設計（Day4 以降に追記していく）
 
-- 仕様: `docs/spec/`
-- 画面一覧: `docs/design/screens.md`
-- データベース設計: `docs/design/database.md`
-- 用語: {{ 生産者、購入者、商品、カート、注文、注文明細 などの定義 }}
+- 仕様: `docs/spec/`。ユーザーストーリー: `docs/design/user-stories.md`
+- 画面一覧: `docs/design/screens.md`（画面名・URL・ロールはこれに合わせる）
+- データベース設計: `docs/design/database.md`（テーブル・カラム名、削除時の動き、在庫の計算）
+- 用語: 購入者 = `customer`、生産者 = `producer`（出品者。`products.producer_id`）、管理者 = `admin`。商品 = `Product`、カート = セッションの `{"商品ID": 数量}`（テーブルにしない）、注文 = `Order`（注文者は `orders.user_id`）、注文明細 = `OrderItem`。注文の状態は `pending`（支払い待ち）/ `paid`（支払い済み）/ `cancelled`（取り消し）で、`OrderStatus` の StrEnum で扱う
+
+### URL と認可
+
+- `/producer/` は生産者の画面（`@role_required(Role.PRODUCER)`）、`/orders/` はログインユーザーの画面
+- 値を変える操作（削除、公開の切り替え、カート、注文）は全て POST。GET で変更しない
+- ロールの確認と所有者の確認は別にする。他人の商品・注文は 403、非公開の商品の詳細は出品者と管理者以外には 404。ボタンを隠すだけにせず、URL を直接叩いても弾かれることをテストする
+
+### 金額と在庫
+
+- 注文の金額は DB の価格からサーバーで計算する。明細には注文時点の `product_name` と `unit_price` を写して保存する
+- 在庫は「いま買える数」= `stock` − 35分以内の支払い待ちの数量。計算は `marche/services/inventory.py` の `available_stock()` だけを使う
+- `stock` は支払い確定時に減らす。`pending` のときだけ `paid` にする条件付き更新で、二重に減らさない
+- 注文がある商品は削除させない（非公開にしてもらう）。SQLite は外部キーの restrict を確かめないので、ビューでも確かめる
+
+### 外部サービス
+
+- Stripe を呼ぶコードは `marche/services/payment.py` だけに書く（AI 機能を足すなら、Claude API は `marche/services/ai.py` だけ）
+- テストでは本物の API を呼ばず、`create_app({"PAYMENT_SERVICE": FakePayment()})` のように設定でフェイクに差し替える
+- （AI 機能を足した場合）AI の出力はそのまま保存・公開しない。フォームの欄に入れるだけにして、人が確認して「保存」を押したときに保存する
