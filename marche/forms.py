@@ -91,3 +91,11 @@ class ProductForm(FlaskForm):
             FileSize(max_size=5 * 1024 * 1024, message="写真は5MB以下にしてください"),
         ],
     )
+
+
+class QuantityForm(FlaskForm):
+    """カートに入れる・数量を変えるときの数量。範囲は「いま買える数」で変わるので、ビューで確かめる"""
+
+    quantity = JapaneseIntegerField(
+        "数量", validators=[InputRequired("数量を入力してください")]
+    )

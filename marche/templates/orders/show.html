@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}注文 #{{ order.id }} | はちまん産直マルシェ{% endblock %}
+{% block content %}
+<h1>注文 #{{ order.id }}</h1>
+<p>注文日時: {{ order.created_at|datetime_jp }}</p>
+<p>状態: <strong>{{ order.status_label }}</strong></p>
+<div class="overflow-auto">
+  <table>
+    <thead>
+      <tr><th>商品</th><th>単価</th><th>数量</th><th>小計</th></tr>
+    </thead>
+    <tbody>
+      {% for item in order.items %}
+      <tr>
+        {# 注文時点の商品名と単価を出す（あとで商品が変わっても、注文は変わらない） #}
+        <td>{{ item.product_name }}</td>
+        <td>{{ item.unit_price|yen }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>{{ item.subtotal|yen }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr><th colspan="3">合計</th><th>{{ order.total_amount|yen }}</th></tr>
+    </tfoot>
+  </table>
+</div>
+<p><a href="{{ url_for('shop.index') }}">商品一覧へ戻る</a></p>
+{% endblock %}
