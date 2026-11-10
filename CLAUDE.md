@@ -52,7 +52,7 @@
 - 仕様: `docs/spec/`。ユーザーストーリー: `docs/design/user-stories.md`
 - 画面一覧: `docs/design/screens.md`（画面名・URL・ロールはこれに合わせる）
 - データベース設計: `docs/design/database.md`（テーブル・カラム名、削除時の動き、在庫の計算）
-- 用語: 購入者 = `customer`、生産者 = `producer`（出品者。`products.producer_id`）、管理者 = `admin`。商品 = `Product`、カート = セッションの `{"商品ID": 数量}`（テーブルにしない）、注文 = `Order`（注文者は `orders.user_id`）、注文明細 = `OrderItem`。注文の状態は `pending`（支払い待ち）/ `paid`（支払い済み）/ `cancelled`（取り消し）で、`OrderStatus` の StrEnum で扱う
+- 用語: 購入者 = `customer`、生産者 = `producer`（出品者。`products.producer_id`）、管理者 = `admin`。商品 = `Product`、カート = セッションの `{"商品ID": 数量}`（テーブルにしない）、注文 = `Order`（注文者は `orders.user_id`）、注文明細 = `OrderItem`。注文の状態は `pending`（支払い待ち）/ `paid`（支払い済み）/ `cancelled`（キャンセル）で、`OrderStatus` の StrEnum で扱う
 
 ### URL と認可
 

@@ -85,7 +85,7 @@ erDiagram
 |-|-|-|-|
 | id | Integer | PK | 注文番号として画面に出す |
 | user_id | Integer | not null, FK `users.id`（restrict）, index | 注文した人 |
-| status | String(20) | not null, default `pending` | `pending`（支払い待ち）/ `paid`（支払い済み）/ `cancelled`（取り消し）。Python 側は `OrderStatus` の StrEnum |
+| status | String(20) | not null, default `pending` | `pending`（支払い待ち）/ `paid`（支払い済み）/ `cancelled`（キャンセル）。Python 側は `OrderStatus` の StrEnum |
 | total_amount | Integer | not null | 合計金額（円）。サーバーで明細から計算する |
 | stripe_checkout_session_id | String(255) | nullable, unique | Checkout Session の ID。注文を作った直後はまだ無いので nullable。unique でも null は複数あってよい（SQLite・MySQL とも） |
 | paid_at | DateTime | nullable | 支払いが確定した日時 |

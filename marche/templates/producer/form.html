@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "_form_errors.html" import field %}
+{% block content %}
+<h1>{{ title }}</h1>
+<form method="post" enctype="multipart/form-data" novalidate>
+  {{ form.hidden_tag() }}
+  {{ field(form.name) }}
+  {{ field(form.price) }}
+  {{ field(form.stock) }}
+  {{ field(form.description) }}
+  {% if product and product.image_filename %}
+  <p>
+    今の写真<br>
+    <img src="{{ url_for('static', filename='uploads/' ~ product.image_filename) }}" alt="{{ product.name }}の写真" style="max-width:240px">
+  </p>
+  {% endif %}
+  {{ field(form.image) }}
+  <small>JPEG・PNG・WebP、5MB まで。{% if product and product.image_filename %}選ばなければ、今の写真のままです。{% endif %}</small>
+  <label>{{ form.is_published() }} {{ form.is_published.label.text }}</label>
+  <button type="submit">保存する</button>
+  <a href="{{ url_for('producer.index') }}">一覧へ戻る</a>
+</form>
+{% endblock %}

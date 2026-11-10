@@ -14,6 +14,9 @@ def create_app(config=None):
             "DATABASE_URL", "sqlite:///marche.sqlite"
         ),
         SESSION_COOKIE_SECURE=os.environ.get("SESSION_COOKIE_SECURE") == "1",
+        UPLOAD_FOLDER=os.path.join(app.root_path, "static", "uploads"),
+        # 写真は5MBまで。フォームの他の項目の分の余裕を見て、リクエスト全体は6MBまで
+        MAX_CONTENT_LENGTH=6 * 1024 * 1024,
     )
     if config is not None:
         app.config.update(config)
@@ -50,6 +53,10 @@ def create_app(config=None):
     @app.errorhandler(404)
     def not_found(error):
         return render_template("errors/404.html"), 404
+
+    @app.errorhandler(413)
+    def too_large(error):
+        return render_template("errors/413.html"), 413
 
     logging.basicConfig(level=logging.INFO)
     return app
