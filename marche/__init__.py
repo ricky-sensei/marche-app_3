@@ -18,6 +18,10 @@ def create_app(config=None):
         UPLOAD_FOLDER=os.path.join(app.root_path, "static", "uploads"),
         # 写真は5MBまで。フォームの他の項目の分の余裕を見て、リクエスト全体は6MBまで
         MAX_CONTENT_LENGTH=6 * 1024 * 1024,
+        STRIPE_SECRET_KEY=os.environ.get("STRIPE_SECRET_KEY", ""),
+        STRIPE_WEBHOOK_SECRET=os.environ.get("STRIPE_WEBHOOK_SECRET", ""),
+        # テストでは FakePayment を渡す。None なら本物（marche.services.payment）を使う
+        PAYMENT_SERVICE=None,
     )
     if config is not None:
         app.config.update(config)
@@ -26,6 +30,11 @@ def create_app(config=None):
         raise RuntimeError(
             "SECRET_KEY を .env（本番は EnvironmentFile）に設定してください"
         )
+
+    from marche.services import payment
+
+    # views は current_app.extensions["payment"] 経由で決済を呼ぶ（テストでフェイクに差し替えるため）
+    app.extensions["payment"] = app.config["PAYMENT_SERVICE"] or payment
 
     db.init_app(app)
     migrate.init_app(app, db)

@@ -7,6 +7,7 @@ from marche.services.inventory import (
     MAX_QUANTITY,
     OrderError,
     available_stock,
+    cancel,
     create_order,
 )
 
@@ -244,8 +245,10 @@ def test_カートに入れて注文するとDBの価格で合計される(
 
     db.session.expire_all()
     (order,) = db.session.scalars(db.select(Order)).all()
-    assert response.status_code == 302
-    assert response.headers["Location"] == f"/orders/{order.id}"
+    assert response.status_code == 303
+    assert response.headers["Location"] == (
+        f"https://checkout.stripe.test/cs_test_fake_{order.id}"
+    )
     assert order.user_id == customer.id
     assert order.total_amount == 500 * 2 + 1200 * 3
     assert sorted(item.unit_price for item in order.items) == [500, 1200]
@@ -276,3 +279,23 @@ def test_未ログインのカートにはログインして注文するリン�
     text = client.get("/cart/").text
     assert "ログインして注文する" in text
     assert 'href="/login?next=/cart/"' in text
+
+
+# --- inventory.cancel ----------------------------------------------------
+
+
+def test_支払い待ちの注文は取り消せる(customer, product, make_order):
+    order = make_order(customer, [(product, 3)])
+    assert cancel(order) is True
+    assert order.status == OrderStatus.CANCELLED
+    assert available_stock(product) == 10  # 在庫の押さえが戻る
+
+
+@pytest.mark.parametrize("status", [OrderStatus.PAID, OrderStatus.CANCELLED])
+def test_支払い待ちでない注文は取り消しても変わらない(
+    customer, product, make_order, status
+):
+    order = make_order(customer, [(product, 1)], status=status)
+    assert cancel(order) is False
+    db.session.expire_all()
+    assert db.session.get(Order, order.id).status == status

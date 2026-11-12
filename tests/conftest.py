@@ -5,11 +5,43 @@ from marche.extensions import db
 from marche.models import Order, OrderItem, OrderStatus, Product, Role, User, now_jst
 
 # 本物の外部サービス（Stripe、拡張で足す Claude API）は、テストでは呼ばない。
-# 決済の章（と AI の拡張）で、ここにフェイク（偽物）のクラスを足し、create_app() の設定で差し替える。
+# フェイク（偽物）のクラスを create_app() の設定で渡して差し替える。
+
+
+class FakePayment:
+    """marche/services/payment.py の代わり。同じ名前の関数を持ち、呼ばれた内容を記録する"""
+
+    def __init__(self):
+        self.created = []  # create_checkout_session に渡された注文の ID
+        self.sessions = {}  # retrieve_session が返す Session（テストで入れておく）
+        self.expired = []  # expire_session に渡された Session の ID
+        self.error = None  # 例外を入れておくと、どの関数もそれを投げる
+
+    def create_checkout_session(self, order):
+        if self.error:
+            raise self.error
+        session_id = f"cs_test_fake_{order.id}"
+        self.created.append(order.id)
+        return session_id, f"https://checkout.stripe.test/{session_id}"
+
+    def retrieve_session(self, session_id):
+        if self.error:
+            raise self.error
+        return self.sessions[session_id]
+
+    def expire_session(self, session_id):
+        if self.error:
+            raise self.error
+        self.expired.append(session_id)
 
 
 @pytest.fixture
-def app(tmp_path):
+def fake_payment():
+    return FakePayment()
+
+
+@pytest.fixture
+def app(tmp_path, fake_payment):
     app = create_app(
         {
             "TESTING": True,
@@ -17,6 +49,7 @@ def app(tmp_path):
             "WTF_CSRF_ENABLED": False,
             # テストの写真が marche/static/uploads に溜まらないように、テストごとの一時フォルダーに置く
             "UPLOAD_FOLDER": str(tmp_path / "uploads"),
+            "PAYMENT_SERVICE": fake_payment,
         }
     )
     with app.app_context():
